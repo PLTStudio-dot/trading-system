@@ -120,7 +120,7 @@ function App() {
             className="btn-sync"
             title="บันทึกข้อมูลทั้งหมดลง Google Sheets"
           >
-            {syncing ? '⏳' : '☁️'} Sync to Sheets
+            {syncing ? '⏳' : '☁️'} บันทึกข้อมูลทั้งหมด
           </button>
           
           <button 
@@ -129,7 +129,7 @@ function App() {
             className="btn-restore"
             title="ดึงข้อมูลจาก Google Sheets กลับมา"
           >
-            {syncing ? '⏳' : '⬇️'} Restore from Sheets
+            {syncing ? '⏳' : '⬇️'} ดึงข้อมูล
           </button>
 
           <button 
