@@ -129,7 +129,7 @@ function App() {
             className="btn-restore"
             title="ดึงข้อมูลจาก Google Sheets กลับมา"
           >
-            {syncing ? '⏳' : '⬇️'} ดึงข้อมูล
+            {syncing ? '⏳' : '⬇️'} ดึงข้อมูลจาก Google Sheets
           </button>
 
           <button 
