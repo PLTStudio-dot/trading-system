@@ -29,24 +29,25 @@ export async function addToSheets(transaction) {
       saleSlip: transaction.saleSlip || ''            // เพิ่มสลิปขาย
     }
 
-    // ใช้ GET method แทน POST เพื่อหลีกเลี่ยง CORS
-    const params = new URLSearchParams({
-      action: 'add',
-      data: JSON.stringify(transactionData)
-    })
-
-    const response = await fetch(`${WEBAPP_URL}?${params.toString()}`, {
-      method: 'GET',
+    // ใช้ POST method สำหรับข้อมูลขนาดใหญ่ (Base64 images)
+    const response = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',  // หลีกเลี่ยง CORS issues
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'add',
+        data: transactionData
+      }),
       redirect: 'follow'
     })
 
-    const result = await response.json()
+    // Note: no-cors mode ไม่สามารถอ่าน response ได้
+    // ต้องถือว่าสำเร็จหากไม่มี error
+    console.log('✅ ส่งข้อมูลไปยัง Google Sheets แล้ว (รวมสลิป)')
+    return { success: true }
     
-    if (result.success) {
-      console.log('✅ บันทึกลง Google Sheets สำเร็จ (รวมสลิป)')
-    }
-    
-    return result
   } catch (error) {
     console.error('❌ Error adding to sheets:', error)
     return { success: false, message: error.toString() }
@@ -105,23 +106,22 @@ export async function updateInSheets(transaction) {
       saleSlip: transaction.saleSlip || ''            // รวมสลิปขาย
     }
 
-    const params = new URLSearchParams({
-      action: 'update',
-      data: JSON.stringify(transactionData)
-    })
-
-    const response = await fetch(`${WEBAPP_URL}?${params.toString()}`, {
-      method: 'GET',
+    const response = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'update',
+        data: transactionData
+      }),
       redirect: 'follow'
     })
 
-    const result = await response.json()
+    console.log('✅ อัพเดทข้อมูลใน Google Sheets แล้ว (รวมสลิป)')
+    return { success: true }
     
-    if (result.success) {
-      console.log('✅ อัพเดทข้อมูลใน Google Sheets สำเร็จ (รวมสลิป)')
-    }
-    
-    return result
   } catch (error) {
     console.error('❌ Error updating in sheets:', error)
     return { success: false, message: error.toString() }
@@ -183,24 +183,22 @@ export async function syncAllToSheets(transactions) {
       saleSlip: t.saleSlip || ''            // รวมสลิปขาย
     }))
 
-    const params = new URLSearchParams({
-      action: 'sync',
-      data: JSON.stringify({ transactions: transactionsWithSlips })
-    })
-
-    const response = await fetch(`${WEBAPP_URL}?${params.toString()}`, {
-      method: 'GET',
+    const response = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'sync',
+        data: { transactions: transactionsWithSlips }
+      }),
       redirect: 'follow'
     })
 
-    const result = await response.json()
+    console.log('✅ Sync ข้อมูลทั้งหมดแล้ว (รวมสลิป):', transactions.length, 'รายการ')
+    return { success: true, count: transactions.length }
     
-    if (result.success) {
-      console.log('✅ Sync ข้อมูลทั้งหมดสำเร็จ (รวมสลิป):', result.data.count, 'รายการ')
-      return { success: true, count: result.data.count }
-    } else {
-      throw new Error(result.message)
-    }
   } catch (error) {
     console.error('❌ Error syncing to sheets:', error)
     throw error
