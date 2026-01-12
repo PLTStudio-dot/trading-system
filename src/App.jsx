@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import TransactionForm from './components/TransactionForm'
 import TransactionList from './components/TransactionList'
+import YearFilter from './components/YearFilter'
 import useTransactions from './hooks/useTransactions'
 import { addToSheets, syncAllToSheets, getFromSheets, isConfigured, testConnection } from './services/googleSheets'
 import './styles/App.css'
@@ -10,6 +11,12 @@ function App() {
   const [editingId, setEditingId] = useState(null)
   const [syncing, setSyncing] = useState(false)
   const [syncStatus, setSyncStatus] = useState('')
+  const [filteredTransactions, setFilteredTransactions] = useState(transactions)
+
+  // อัพเดท filteredTransactions เมื่อ transactions เปลี่ยน
+  useState(() => {
+    setFilteredTransactions(transactions)
+  }, [transactions])
 
   const handleSubmit = async (transaction) => {
     if (editingId) {
@@ -23,7 +30,7 @@ function App() {
       if (isConfigured()) {
         try {
           await addToSheets(transaction)
-          console.log('✅ บันทึกลง Google Sheets สำเร็จ')
+          console.log('✅ บันทึกลง Google Sheets สำเร็จ (รวมสลิป)')
         } catch (error) {
           console.error('❌ ไม่สามารถบันทึกลง Google Sheets:', error)
           // ไม่แสดง alert เพื่อไม่รบกวนการใช้งาน
@@ -48,11 +55,11 @@ function App() {
     }
 
     setSyncing(true)
-    setSyncStatus('กำลัง Sync...')
+    setSyncStatus('กำลัง Sync รวมสลิป...')
 
     try {
       const result = await syncAllToSheets(transactions)
-      setSyncStatus(`✅ Sync สำเร็จ! (${result.count} รายการ)`)
+      setSyncStatus(`✅ Sync สำเร็จ! (${result.count} รายการ รวมสลิป)`)
       setTimeout(() => setSyncStatus(''), 3000)
     } catch (error) {
       setSyncStatus('❌ Sync ล้มเหลว: ' + error.message)
@@ -74,12 +81,13 @@ function App() {
     }
 
     setSyncing(true)
-    setSyncStatus('กำลังดึงข้อมูล...')
+    setSyncStatus('กำลังดึงข้อมูล (รวมสลิป)...')
 
     try {
       const data = await getFromSheets()
       setTransactions(data)
-      setSyncStatus(`✅ ดึงข้อมูลสำเร็จ! (${data.length} รายการ)`)
+      setFilteredTransactions(data) // อัพเดท filtered ด้วย
+      setSyncStatus(`✅ ดึงข้อมูลสำเร็จ! (${data.length} รายการ รวมสลิป)`)
       setTimeout(() => setSyncStatus(''), 3000)
     } catch (error) {
       setSyncStatus('❌ ดึงข้อมูลล้มเหลว: ' + error.message)
@@ -106,11 +114,16 @@ function App() {
     setSyncing(false)
   }
 
+  // Handle filter change
+  const handleFilterChange = (filtered) => {
+    setFilteredTransactions(filtered)
+  }
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>📊 ระบบเก็บข้อมูลซื้อ-ขาย</h1>
-        <p>บันทึกและติดตามกำไร-ขาดทุนของคุณ</p>
+        <p>บันทึกและติดตามกำไร-ขาดทุนของคุณ (รวมสลิป)</p>
         
         {/* ปุ่ม Google Sheets Sync */}
         <div className="sync-buttons">
@@ -118,7 +131,7 @@ function App() {
             onClick={handleSync} 
             disabled={syncing || transactions.length === 0}
             className="btn-sync"
-            title="บันทึกข้อมูลทั้งหมดลง Google Sheets"
+            title="บันทึกข้อมูลทั้งหมดลง Google Sheets (รวมสลิป)"
           >
             {syncing ? '⏳' : '☁️'} บันทึกข้อมูลทั้งหมด
           </button>
@@ -127,7 +140,7 @@ function App() {
             onClick={handleRestore} 
             disabled={syncing}
             className="btn-restore"
-            title="ดึงข้อมูลจาก Google Sheets กลับมา"
+            title="ดึงข้อมูลจาก Google Sheets กลับมา (รวมสลิป)"
           >
             {syncing ? '⏳' : '⬇️'} ดึงข้อมูลจาก Google Sheets
           </button>
@@ -157,8 +170,16 @@ function App() {
             onCancelEdit={handleCancelEdit}
           />
           
+          {/* Year Filter */}
+          {transactions.length > 0 && (
+            <YearFilter 
+              transactions={transactions}
+              onFilterChange={handleFilterChange}
+            />
+          )}
+          
           <TransactionList 
-            transactions={transactions}
+            transactions={filteredTransactions}
             onDelete={deleteTransaction}
             onEdit={handleEdit}
           />
@@ -167,7 +188,7 @@ function App() {
 
       <footer className="app-footer">
         <p>© 2026 Trading System - DACAMERA SHOP</p>
-        {isConfigured() && <p className="sheets-status">🟢 Google Sheets: เชื่อมต่อแล้ว</p>}
+        {isConfigured() && <p className="sheets-status">🟢 Google Sheets: เชื่อมต่อแล้ว (รองรับสลิป)</p>}
         {!isConfigured() && <p className="sheets-status">🔴 Google Sheets: ยังไม่ได้ตั้งค่า</p>}
       </footer>
     </div>

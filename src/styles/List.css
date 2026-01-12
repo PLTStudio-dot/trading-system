@@ -5,6 +5,55 @@
   box-shadow: var(--shadow-md);
 }
 
+/* Year Filter */
+.year-filter {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(29, 78, 216, 0.02) 100%);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  transition: all 0.2s ease;
+}
+
+.year-filter:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+}
+
+.filter-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--font-base);
+  white-space: nowrap;
+}
+
+.filter-select {
+  flex: 1;
+  max-width: 300px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: var(--font-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-select:hover {
+  border-color: var(--primary-color);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 /* Empty State */
 .empty-state {
   text-align: center;
@@ -306,6 +355,15 @@
 @media (max-width: 768px) {
   .transaction-list-container {
     padding: var(--spacing-lg);
+  }
+
+  .year-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-select {
+    max-width: 100%;
   }
 
   .item-header {

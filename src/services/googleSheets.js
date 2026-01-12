@@ -1,12 +1,12 @@
 /**
- * Google Sheets Service - ใช้ GET method เพื่อหลีกเลี่ยง CORS
+ * Google Sheets Service - รองรับการเก็บสลิปแบบ Base64
  */
 
 // ⚠️ สำคัญ: ใส่ Web App URL ที่ได้จาก Google Apps Script Deploy
 const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzfMXgGoNkCs_wVcv7MV6F_QibZDcobSK3Sm_bDL4jls3RCI6xfVZ4rhG21c5ErBebqbg/exec'
 
 /**
- * เพิ่มข้อมูลลง Google Sheets
+ * เพิ่มข้อมูลลง Google Sheets (รวมสลิป)
  */
 export async function addToSheets(transaction) {
   if (!isConfigured()) {
@@ -15,7 +15,7 @@ export async function addToSheets(transaction) {
   }
 
   try {
-    // ลบรูปภาพออกก่อนส่ง
+    // รวมข้อมูลทั้งหมด รวมถึงสลิป (Base64)
     const transactionData = {
       id: transaction.id,
       purchaseDate: transaction.purchaseDate,
@@ -24,7 +24,9 @@ export async function addToSheets(transaction) {
       saleDate: transaction.saleDate || '',
       salePrice: transaction.salePrice || '',
       profit: transaction.profit || '',
-      profitPercent: transaction.profitPercent || ''
+      profitPercent: transaction.profitPercent || '',
+      purchaseSlip: transaction.purchaseSlip || '',  // เพิ่มสลิปซื้อ
+      saleSlip: transaction.saleSlip || ''            // เพิ่มสลิปขาย
     }
 
     // ใช้ GET method แทน POST เพื่อหลีกเลี่ยง CORS
@@ -41,7 +43,7 @@ export async function addToSheets(transaction) {
     const result = await response.json()
     
     if (result.success) {
-      console.log('✅ บันทึกลง Google Sheets สำเร็จ')
+      console.log('✅ บันทึกลง Google Sheets สำเร็จ (รวมสลิป)')
     }
     
     return result
@@ -52,7 +54,7 @@ export async function addToSheets(transaction) {
 }
 
 /**
- * ดึงข้อมูลจาก Google Sheets
+ * ดึงข้อมูลจาก Google Sheets (รวมสลิป)
  */
 export async function getFromSheets() {
   if (!isConfigured()) {
@@ -70,7 +72,7 @@ export async function getFromSheets() {
     const result = await response.json()
     
     if (result.success) {
-      console.log('✅ ดึงข้อมูลจาก Google Sheets สำเร็จ:', result.data.transactions.length, 'รายการ')
+      console.log('✅ ดึงข้อมูลจาก Google Sheets สำเร็จ:', result.data.transactions.length, 'รายการ (รวมสลิป)')
       return result.data.transactions
     } else {
       throw new Error(result.message)
@@ -82,7 +84,7 @@ export async function getFromSheets() {
 }
 
 /**
- * อัพเดทข้อมูลใน Google Sheets
+ * อัพเดทข้อมูลใน Google Sheets (รวมสลิป)
  */
 export async function updateInSheets(transaction) {
   if (!isConfigured()) {
@@ -98,7 +100,9 @@ export async function updateInSheets(transaction) {
       saleDate: transaction.saleDate || '',
       salePrice: transaction.salePrice || '',
       profit: transaction.profit || '',
-      profitPercent: transaction.profitPercent || ''
+      profitPercent: transaction.profitPercent || '',
+      purchaseSlip: transaction.purchaseSlip || '',  // รวมสลิปซื้อ
+      saleSlip: transaction.saleSlip || ''            // รวมสลิปขาย
     }
 
     const params = new URLSearchParams({
@@ -114,7 +118,7 @@ export async function updateInSheets(transaction) {
     const result = await response.json()
     
     if (result.success) {
-      console.log('✅ อัพเดทข้อมูลใน Google Sheets สำเร็จ')
+      console.log('✅ อัพเดทข้อมูลใน Google Sheets สำเร็จ (รวมสลิป)')
     }
     
     return result
@@ -157,7 +161,7 @@ export async function deleteFromSheets(id) {
 }
 
 /**
- * Sync ข้อมูลทั้งหมดลง Google Sheets
+ * Sync ข้อมูลทั้งหมดลง Google Sheets (รวมสลิป)
  */
 export async function syncAllToSheets(transactions) {
   if (!isConfigured()) {
@@ -165,8 +169,8 @@ export async function syncAllToSheets(transactions) {
   }
 
   try {
-    // ลบรูปภาพออกก่อน sync
-    const transactionsWithoutImages = transactions.map(t => ({
+    // รวมข้อมูลทั้งหมด รวมถึงสลิป
+    const transactionsWithSlips = transactions.map(t => ({
       id: t.id,
       purchaseDate: t.purchaseDate,
       model: t.model,
@@ -174,12 +178,14 @@ export async function syncAllToSheets(transactions) {
       saleDate: t.saleDate || '',
       salePrice: t.salePrice || '',
       profit: t.profit || '',
-      profitPercent: t.profitPercent || ''
+      profitPercent: t.profitPercent || '',
+      purchaseSlip: t.purchaseSlip || '',  // รวมสลิปซื้อ
+      saleSlip: t.saleSlip || ''            // รวมสลิปขาย
     }))
 
     const params = new URLSearchParams({
       action: 'sync',
-      data: JSON.stringify({ transactions: transactionsWithoutImages })
+      data: JSON.stringify({ transactions: transactionsWithSlips })
     })
 
     const response = await fetch(`${WEBAPP_URL}?${params.toString()}`, {
@@ -190,7 +196,7 @@ export async function syncAllToSheets(transactions) {
     const result = await response.json()
     
     if (result.success) {
-      console.log('✅ Sync ข้อมูลทั้งหมดสำเร็จ:', result.data.count, 'รายการ')
+      console.log('✅ Sync ข้อมูลทั้งหมดสำเร็จ (รวมสลิป):', result.data.count, 'รายการ')
       return { success: true, count: result.data.count }
     } else {
       throw new Error(result.message)
