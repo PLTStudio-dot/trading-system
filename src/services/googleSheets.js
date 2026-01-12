@@ -56,6 +56,7 @@ export async function addToSheets(transaction) {
 
 /**
  * ดึงข้อมูลจาก Google Sheets (รวมสลิป)
+ * ใช้ JSONP เพื่อหลีกเลี่ยง CORS issues
  */
 export async function getFromSheets() {
   if (!isConfigured()) {
@@ -63,21 +64,53 @@ export async function getFromSheets() {
   }
 
   try {
-    const params = new URLSearchParams({ action: 'getAll' })
+    // ใช้ JSONP แทน fetch เพื่อหลีกเลี่ยง CORS
+    const callbackName = 'jsonpCallback_' + Date.now()
     
-    const response = await fetch(`${WEBAPP_URL}?${params.toString()}`, {
-      method: 'GET',
-      redirect: 'follow'
+    return new Promise((resolve, reject) => {
+      // สร้าง script tag
+      const script = document.createElement('script')
+      const timeout = setTimeout(() => {
+        cleanup()
+        reject(new Error('Request timeout'))
+      }, 30000) // 30 seconds timeout
+      
+      // สร้าง global callback function
+      window[callbackName] = (data) => {
+        cleanup()
+        
+        if (data.success) {
+          console.log('✅ ดึงข้อมูลจาก Google Sheets สำเร็จ:', data.data.transactions.length, 'รายการ (รวมสลิป)')
+          resolve(data.data.transactions)
+        } else {
+          reject(new Error(data.message))
+        }
+      }
+      
+      // Cleanup function
+      const cleanup = () => {
+        clearTimeout(timeout)
+        if (script.parentNode) {
+          script.parentNode.removeChild(script)
+        }
+        delete window[callbackName]
+      }
+      
+      // สร้าง URL พร้อม callback parameter
+      const params = new URLSearchParams({
+        action: 'getAll',
+        callback: callbackName
+      })
+      
+      script.src = `${WEBAPP_URL}?${params.toString()}`
+      script.onerror = () => {
+        cleanup()
+        reject(new Error('Script load error'))
+      }
+      
+      // เพิ่ม script เข้า DOM
+      document.head.appendChild(script)
     })
-
-    const result = await response.json()
-    
-    if (result.success) {
-      console.log('✅ ดึงข้อมูลจาก Google Sheets สำเร็จ:', result.data.transactions.length, 'รายการ (รวมสลิป)')
-      return result.data.transactions
-    } else {
-      throw new Error(result.message)
-    }
   } catch (error) {
     console.error('❌ Error getting from sheets:', error)
     throw error
